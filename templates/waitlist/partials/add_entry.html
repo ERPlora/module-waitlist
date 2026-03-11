@@ -1,0 +1,102 @@
+{% load djicons i18n %}
+
+<div class="p-4">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex items-center gap-3">
+            <button class="btn btn-ghost btn-sm"
+                hx-get="{% url 'waitlist:index' %}"
+                hx-target="#main-content-area"
+                hx-push-url="true">
+                {% icon "arrow-back-outline" %}
+            </button>
+            <div>
+                <h1 class="text-3xl font-bold">{% trans "Add to Queue" %}</h1>
+                <p class="text-sm mt-1 text-muted">{% trans "Add a new guest to the waitlist" %}</p>
+            </div>
+        </div>
+    </div>
+
+    {% if queue_full %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="flex items-center gap-3">
+                {% icon "warning-outline" css_class="text-2xl text-error" %}
+                <div>
+                    <p class="font-semibold text-error">{% trans "Queue is full" %}</p>
+                    <p class="text-sm text-muted">{% trans "Maximum capacity reached. Please wait for an opening." %} ({{ current_count }}/{{ settings.max_queue_size }})</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                {% icon "person-add-outline" css_class="text-primary mr-2" %}
+                {% trans "Guest Information" %}
+            </h3>
+        </div>
+        <div class="card-body">
+            <form hx-post="{% url 'waitlist:add_entry' %}"
+                  hx-target="#main-content-area"
+                  hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Name -->
+                    <div class="md:col-span-2">
+                        <label class="label">{% trans "Name" %} *</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <p class="text-sm text-error mt-1">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label class="label">{% trans "Phone" %}</label>
+                        {{ form.phone }}
+                    </div>
+
+                    <!-- Party Size -->
+                    <div>
+                        <label class="label">{% trans "Party Size" %}</label>
+                        {{ form.party_size }}
+                    </div>
+
+                    <!-- Service Type -->
+                    <div>
+                        <label class="label">{% trans "Service Type" %}</label>
+                        {{ form.service_type }}
+                    </div>
+
+                    <!-- Priority -->
+                    <div>
+                        <label class="label">{% trans "Priority" %}</label>
+                        {{ form.priority }}
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="md:col-span-2">
+                        <label class="label">{% trans "Notes" %}</label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" class="btn"
+                        hx-get="{% url 'waitlist:index' %}"
+                        hx-target="#main-content-area"
+                        hx-push-url="true">
+                        {% trans "Cancel" %}
+                    </button>
+                    <button type="submit" class="btn color-primary" {% if queue_full %}disabled{% endif %}>
+                        {% icon "add-outline" css_class="mr-1" %}
+                        {% trans "Add to Queue" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

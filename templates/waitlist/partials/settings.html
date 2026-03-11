@@ -1,0 +1,131 @@
+{% load djicons i18n %}
+
+<div class="p-4">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">{% trans "Settings" %}</h1>
+                <p class="text-sm mt-2 text-muted">{% trans "Waitlist module configuration" %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Time -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                {% icon "time-outline" css_class="text-primary mr-2" %}
+                {% trans "Queue Settings" %}
+            </h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Average Service Time" %}</div>
+                        <div class="list-item-note">{% trans "Average time per guest in minutes, used to estimate wait times" %}</div>
+                    </div>
+                    <div class="list-item-end" style="min-width: 100px;">
+                        <input type="number" name="average_service_time" value="{{ config.average_service_time }}"
+                            class="input input--sm text-right w-20"
+                            min="1" max="240" step="5"
+                            hx-post="{% url 'waitlist:settings_input' %}"
+                            hx-trigger="change"
+                            hx-swap="none"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-vals='{"name": "average_service_time"}'>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Maximum Queue Size" %}</div>
+                        <div class="list-item-note">{% trans "Maximum number of people allowed in the queue at once" %}</div>
+                    </div>
+                    <div class="list-item-end" style="min-width: 100px;">
+                        <input type="number" name="max_queue_size" value="{{ config.max_queue_size }}"
+                            class="input input--sm text-right w-20"
+                            min="1" max="200"
+                            hx-post="{% url 'waitlist:settings_input' %}"
+                            hx-trigger="change"
+                            hx-swap="none"
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                            hx-vals='{"name": "max_queue_size"}'>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Display Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                {% icon "tv-outline" css_class="text-primary mr-2" %}
+                {% trans "Display" %}
+            </h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Public Display Mode" %}</div>
+                        <div class="list-item-note">{% trans "Enable public-facing queue display for screens" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        <label class="toggle">
+                            <input type="checkbox" {% if config.display_mode %}checked{% endif %}
+                                hx-post="{% url 'waitlist:settings_toggle' %}"
+                                hx-trigger="change"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-vals='js:{"name": "display_mode", "value": event.target.checked ? "true" : "false"}'>
+
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Quick Actions" %}</h3>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                <a hx-get="{% url 'waitlist:display' %}"
+                   hx-target="#main-content-area"
+                   hx-push-url="true"
+                   class="list-item list-item-clickable">
+                    <div class="list-item-start">
+                        {% icon "tv-outline" css_class="text-xl text-primary" %}
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "Open Display" %}</div>
+                        <div class="list-item-note">{% trans "Open the public-facing queue display" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        {% icon "chevron-forward-outline" css_class="text-muted" %}
+                    </div>
+                </a>
+                <a hx-get="{% url 'waitlist:index' %}"
+                   hx-target="#main-content-area"
+                   hx-push-url="true"
+                   class="list-item list-item-clickable">
+                    <div class="list-item-start">
+                        {% icon "people-outline" css_class="text-xl text-success" %}
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label">{% trans "View Queue" %}</div>
+                        <div class="list-item-note">{% trans "Go back to the queue management view" %}</div>
+                    </div>
+                    <div class="list-item-end">
+                        {% icon "chevron-forward-outline" css_class="text-muted" %}
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

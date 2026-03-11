@@ -1,0 +1,90 @@
+{% load djicons i18n %}
+
+<div class="p-4"
+     hx-get="{% url 'waitlist:display' %}"
+     hx-trigger="every 10s"
+     hx-target="#main-content-area"
+     hx-swap="innerHTML">
+
+    <!-- Now Serving -->
+    <div class="text-center mb-8">
+        {% if now_serving %}
+        <div class="card mx-auto" style="max-width: 600px;">
+            <div class="card-body p-8">
+                <p class="text-lg text-muted mb-2">{% trans "Now Serving" %}</p>
+                <div class="flex items-center justify-center gap-4 mb-4">
+                    <div class="w-20 h-20 bg-success/10 rounded-2xl flex items-center justify-center">
+                        <span class="text-4xl font-bold text-success">#{{ now_serving.position }}</span>
+                    </div>
+                </div>
+                <h2 class="text-4xl font-bold mb-2">{{ now_serving.name }}</h2>
+                <div class="flex items-center justify-center gap-4 text-lg text-muted">
+                    <span>
+                        {% icon "people-outline" css_class="inline-block mr-1" %}
+                        {{ now_serving.party_size }} {% trans "guests" %}
+                    </span>
+                    {% if now_serving.service_type %}
+                    <span>&middot; {{ now_serving.service_type }}</span>
+                    {% endif %}
+                </div>
+                <div class="mt-3">
+                    <span class="badge color-{{ now_serving.status_class }} badge-lg">{{ now_serving.get_status_display }}</span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="py-12">
+            {% icon "checkmark-circle-outline" css_class="text-6xl text-success block mx-auto mb-4" %}
+            <h2 class="text-3xl font-bold text-muted">{% trans "No one being served" %}</h2>
+            <p class="text-lg text-muted mt-2">{% trans "The queue is clear" %}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Up Next -->
+    {% if upcoming %}
+    <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-header">
+            <h3 class="card-title text-xl">
+                {% icon "arrow-forward-outline" css_class="text-primary mr-2" %}
+                {% trans "Up Next" %}
+            </h3>
+            <span class="badge">{{ total_waiting }}</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="list">
+                {% for entry in upcoming %}
+                <div class="list-item">
+                    <div class="list-item-start">
+                        <div class="w-14 h-14 rounded-xl flex items-center justify-center
+                            {% if entry.priority == 'vip' %}bg-amber-100 dark:bg-amber-900/30{% else %}bg-warning/10{% endif %}">
+                            <span class="text-xl font-bold
+                                {% if entry.priority == 'vip' %}text-amber-600{% else %}text-warning{% endif %}">
+                                #{{ entry.position }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="list-item-content">
+                        <div class="list-item-label text-lg flex items-center gap-2">
+                            {{ entry.name }}
+                            {% if entry.priority == 'vip' %}
+                                <span class="badge color-warning badge-sm">VIP</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-item-note text-base">
+                            {% icon "people-outline" css_class="inline-block text-sm mr-1" %}
+                            {{ entry.party_size }}
+                            {% if entry.estimated_wait %} &middot; ~{{ entry.estimated_wait }} {% trans "min" %}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% elif not now_serving %}
+    <div class="text-center py-8">
+        <p class="text-xl text-muted">{% trans "No guests waiting" %}</p>
+    </div>
+    {% endif %}
+</div>

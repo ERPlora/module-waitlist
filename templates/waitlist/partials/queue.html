@@ -1,0 +1,203 @@
+{% load djicons i18n %}
+
+<div class="p-4" id="waitlist-queue"
+     hx-get="{% url 'waitlist:index' %}"
+     hx-trigger="refreshQueue from:body"
+     hx-target="#main-content-area">
+
+    <!-- Page Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold">{% trans "Queue" %}</h1>
+                <p class="text-sm mt-2 text-muted">{% trans "Manage your waitlist in real time" %}</p>
+            </div>
+            <button class="btn color-primary"
+                hx-get="{% url 'waitlist:add_entry' %}"
+                hx-target="#main-content-area"
+                hx-push-url="true">
+                {% icon "add-outline" css_class="mr-2" %}
+                {% trans "Add to Queue" %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="card">
+            <div class="card-body p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-warning/10 rounded-xl flex items-center justify-center">
+                        {% icon "people-outline" css_class="text-2xl text-warning" %}
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted">{% trans "Waiting" %}</div>
+                        <div class="text-2xl font-semibold text-warning">{{ waiting_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
+                        {% icon "checkmark-circle-outline" css_class="text-2xl text-success" %}
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted">{% trans "In Service" %}</div>
+                        <div class="text-2xl font-semibold text-success">{{ in_service_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        {% icon "time-outline" css_class="text-2xl text-primary" %}
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted">{% trans "Avg. Wait" %}</div>
+                        <div class="text-2xl font-semibold text-primary">{{ avg_wait }} {% trans "min" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{% trans "Active Queue" %}</h3>
+            <span class="badge">{{ entries|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if entries %}
+            <div class="list">
+                {% for entry in entries %}
+                <div class="list-item" x-data="{ showActions: false }">
+                    <div class="list-item-start">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center
+                            {% if entry.priority == 'vip' %}bg-amber-100 dark:bg-amber-900/30{% elif entry.status == 'called' %}bg-primary/10{% elif entry.status == 'in_service' %}bg-success/10{% else %}bg-warning/10{% endif %}">
+                            <span class="text-lg font-bold
+                                {% if entry.priority == 'vip' %}text-amber-600{% elif entry.status == 'called' %}text-primary{% elif entry.status == 'in_service' %}text-success{% else %}text-warning{% endif %}">
+                                #{{ entry.position }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="list-item-content" @click="showActions = !showActions" style="cursor: pointer;">
+                        <div class="list-item-label flex items-center gap-2">
+                            {{ entry.name }}
+                            {% if entry.priority == 'vip' %}
+                                <span class="badge color-warning badge-sm">VIP</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-item-note">
+                            {% icon "people-outline" css_class="inline-block text-xs mr-1" %}
+                            {{ entry.party_size }}
+                            {% if entry.service_type %} &middot; {{ entry.service_type }}{% endif %}
+                            &middot; {% icon "time-outline" css_class="inline-block text-xs mr-1" %}{{ entry.wait_minutes }} {% trans "min" %}
+                            {% if entry.estimated_wait %} &middot; ~{{ entry.estimated_wait }} {% trans "min est." %}{% endif %}
+                        </div>
+                    </div>
+                    <div class="list-item-end flex items-center gap-2">
+                        <span class="badge color-{{ entry.status_class }}">{{ entry.get_status_display }}</span>
+                    </div>
+
+                    <!-- Action Buttons (expanded) -->
+                    <div x-show="showActions" x-transition class="w-full border-t mt-2 pt-3 pb-1 flex flex-wrap gap-2 pl-14">
+                        {% if entry.status == 'waiting' %}
+                            <button class="btn btn-sm color-primary"
+                                hx-post="{% url 'waitlist:call_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "megaphone-outline" css_class="mr-1" %}
+                                {% trans "Call" %}
+                            </button>
+                            <button class="btn btn-sm color-success"
+                                hx-post="{% url 'waitlist:seat_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "enter-outline" css_class="mr-1" %}
+                                {% trans "Seat" %}
+                            </button>
+                            <button class="btn btn-sm color-warning btn-outline"
+                                hx-post="{% url 'waitlist:no_show_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-confirm="{% trans 'Mark as no-show?' %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "eye-off-outline" css_class="mr-1" %}
+                                {% trans "No Show" %}
+                            </button>
+                            <button class="btn btn-sm color-error btn-outline"
+                                hx-post="{% url 'waitlist:cancel_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-confirm="{% trans 'Cancel this entry?' %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "close-outline" css_class="mr-1" %}
+                                {% trans "Cancel" %}
+                            </button>
+                        {% elif entry.status == 'called' %}
+                            <button class="btn btn-sm color-success"
+                                hx-post="{% url 'waitlist:seat_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "enter-outline" css_class="mr-1" %}
+                                {% trans "Seat" %}
+                            </button>
+                            <button class="btn btn-sm color-warning btn-outline"
+                                hx-post="{% url 'waitlist:no_show_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-confirm="{% trans 'Mark as no-show?' %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "eye-off-outline" css_class="mr-1" %}
+                                {% trans "No Show" %}
+                            </button>
+                            <button class="btn btn-sm color-error btn-outline"
+                                hx-post="{% url 'waitlist:cancel_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-confirm="{% trans 'Cancel this entry?' %}"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "close-outline" css_class="mr-1" %}
+                                {% trans "Cancel" %}
+                            </button>
+                        {% elif entry.status == 'in_service' %}
+                            <button class="btn btn-sm color-success"
+                                hx-post="{% url 'waitlist:complete_entry' entry.pk %}"
+                                hx-swap="none"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                                {% icon "checkmark-circle-outline" css_class="mr-1" %}
+                                {% trans "Complete" %}
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-muted">
+                {% icon "people-outline" css_class="text-5xl block mx-auto mb-2" %}
+                <p class="mt-2 font-semibold">{% trans "No one in the queue" %}</p>
+                <p class="text-sm mt-1">{% trans "Add someone to get started" %}</p>
+                <button class="btn btn-sm color-primary mt-3"
+                    hx-get="{% url 'waitlist:add_entry' %}"
+                    hx-target="#main-content-area"
+                    hx-push-url="true">
+                    {% icon "add-outline" css_class="mr-1" %}
+                    {% trans "Add to Queue" %}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Completed Today -->
+    {% if completed_count %}
+    <div class="mt-4">
+        <p class="text-sm text-muted">
+            {% icon "checkmark-done-outline" css_class="inline-block mr-1" %}
+            {{ completed_count }} {% trans "completed today" %}
+        </p>
+    </div>
+    {% endif %}
+</div>
